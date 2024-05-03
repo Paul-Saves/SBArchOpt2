@@ -12,8 +12,6 @@ from pymoo.core.initialization import Initialization
 def check_dependency():
     return pytest.mark.skipif(not HAS_OPEN_TURB_ARCH, reason='Turbofan arch dependencies not installed')
 
-
-@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
 def test_slow_tests():
     assert HAS_OPEN_TURB_ARCH
 
@@ -58,7 +56,6 @@ def test_simple_problem():
     assert np.all(np.abs(f_eval[0, :] - f_pf[0, :]) < 1e-3)
 
 
-@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
 @check_dependency()
 def test_simple_problem_eval():
     with tempfile.TemporaryDirectory() as tmp_folder:
@@ -137,8 +134,6 @@ def test_realistic_problem():
     assert np.all(np.isfinite(f_eval))
     assert np.all(np.abs(f_eval[0, :] - f_pf[0, :]) < 1e-3)
 
-
-@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
 @check_dependency()
 def test_realistic_problem_2obj():
     problem = RealisticTurbofanArch(noise_obj=False)

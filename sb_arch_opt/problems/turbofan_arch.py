@@ -158,6 +158,13 @@ class OpenTurbArchProblemWrapper(HierarchyProblemBase):
         self._problem.save_results_combined = self.results_folder is not None
 
         x_imp, f, g, _ = self._problem.evaluate(self._convert_x(x))
+# =============================================================================
+#         x_imp= x
+#         import random
+#         f = np.ones(1)*random.random()
+#         g= np.ones(5)*random.random()
+# 
+# =============================================================================
         is_active = self._problem.get_last_is_active()
         return x_imp, f, g, is_active
 

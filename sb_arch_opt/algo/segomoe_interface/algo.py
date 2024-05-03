@@ -62,7 +62,7 @@ class SEGOMOEInterface:
     Class for interfacing with SEGOMOE
     """
 
-    def __init__(self, problem: ArchOptProblemBase, results_folder: str, n_init: int, n_infill: int, use_moe=True,
+    def __init__(self, problem: ArchOptProblemBase, results_folder: str, n_init: int, n_infill: int, use_moe=False,
                  sego_options=None, model_options=None, verbose=True):
         check_dependencies()
         self._problem = problem
@@ -189,14 +189,14 @@ class SEGOMOEInterface:
             self.run_doe(self.n_init-n_available)
 
         # Run optimization
-        n_available = self.n_tried
-        if n_available < self.n_init+self.n_infill:
-            n_infills = self.n_infill - (n_available-self.n_init)
-            log.info(f'Running optimization: {n_infills} infill points (ok DOE points: {self.n})')
-            self.run_infills(n_infills)
+        n_available = 0
+        if n_available < +self.n_infill:
+      #      n_infills = self.n_infill - (n_available-self.n_init)
+            log.info(f'Running optimization: {self.n_infill} infill points (ok DOE points: {self.n})')
+            self.run_infills(self.n_infill)
 
         # Save final results and return Pareto front
-        self._save_results()
+    #    self._save_results()
         return self.opt
 
     def run_doe(self, n: int = None):
@@ -204,14 +204,18 @@ class SEGOMOEInterface:
             n = self.n_init
 
         x_doe = self._sample_doe(n)
-        self._x, self._x_failed, self._y = self._get_xy(self._evaluate(x_doe))
-
-        if self._x.shape[0] < 2:
-            log.info(f'Not enough points sampled ({self._x.shape[0]} success, {self._x_failed.shape[0]} failed),'
-                     f'problems with model fitting can be expected')
-
-        self._save_results()
-
+        self._x = x_doe
+        self._y=(np.zeros((np.shape(self._x)[0],1)))
+# =============================================================================
+#         self._x, self._x_failed, self._y = self._get_xy(self._evaluate(x_doe))
+# 
+#         if self._x.shape[0] < 2:
+#             log.info(f'Not enough points sampled ({self._x.shape[0]} success, {self._x_failed.shape[0]} failed),'
+#                      f'problems with model fitting can be expected')
+# 
+#         #self._save_results()
+# 
+# =============================================================================
     def _sample_doe(self, n: int) -> np.ndarray:
         return HierarchicalSampling().do(self._problem, n).get('X')
     
@@ -219,18 +223,22 @@ class SEGOMOEInterface:
         if n_infills is None:
             n_infills = self.n_infill
         i_eval = 0
-    
+     
         def _grouped_eval(x):
              nonlocal i_eval
              i_eval += 1
              log.info(f"Evaluating: {i_eval}/{n_infills}")
     
              x, x_failed, y = self._get_xy(self._evaluate(np.array([x])))
-    
-             self._x = np.row_stack([self._x, x])
-             self._y = np.row_stack([self._y, y])
-             self._x_failed = np.row_stack([self._x_failed, x_failed])
-             self._save_results()
+             try : 
+                 self._x = np.row_stack([self._x, x])
+                 self._y = np.row_stack([self._y, y])
+                 self._x_failed = np.row_stack([self._x_failed, x_failed])
+             except : 
+                 self._x = x
+                 self._y = y
+                 self._x_failed = x_failed
+             #self._save_results()
     
              if len(x_failed) > 0:
                  return [], True
@@ -259,7 +267,7 @@ class SEGOMOEInterface:
             self._x = np.row_stack([self._x, x])
             self._y = np.row_stack([self._y, y])
             self._x_failed = np.row_stack([self._x_failed, x_failed])
-            self._save_results()
+           # self._save_results()
 
     def _ask_infill(self) -> np.ndarray:
         """
@@ -320,7 +328,10 @@ class SEGOMOEInterface:
             'analytical_diff': False,
             'profiling': False,
             'verbose': self.verbose,
-            'cst_crit': 'MC',
+            "obj_crit": "WB2S_FE",
+            'cst_crit': "UTB",
+            'dir_out' : self._results_folder+"out",
+            "size_doe" : self.n_init,
             **self.sego_options,
         }
 
